@@ -1,0 +1,111 @@
+---
+title: "Dados Yanomami"
+format: pdf
+editor: visual
+---
+
+## Bibliotecas
+
+```{r}
+#| message: false
+library(tidyverse)
+library(gt)
+```
+
+## Pedido 25072038745202323
+
+```{r}
+ped25072038745202323 <- read_csv2(
+  file = "dados/25072038745202323.csv", 
+  col_types = cols(
+    ano = col_character(),
+    pneumonia = col_double(),
+    desnutricao = col_double(),
+    malaria = col_double(),
+    tuberculose = col_double(),
+    obito_1ano = col_double(),
+    obito_total = col_double())
+  ) |>
+  mutate(across(2:6, ~.x/obito_total*100))
+```
+
+Mortalidade percentual, em relação ao total de óbitos
+
+```{r}
+ped25072038745202323 |> gt()
+```
+
+```{r}
+#| fig-height: 8
+#| fig-width: 8
+ped25072038745202323 |>
+  select(1:6) |>
+  pivot_longer(cols = 2:6) |>
+  mutate(name = case_match(
+    name,
+    "desnutricao" ~ "Desnutrição",
+    "malaria" ~ "Malária",
+    "obito_1ano" ~ "Menores de 1 ano",
+    "pneumonia" ~ "Pneumonia",
+    "tuberculose" ~ "Tuberculose"
+  )) |>
+  ggplot(aes(x = ano, y = value, color = name, group = name)) +
+  geom_line(alpha = .7, lwd = 1) +
+  theme_bw() +
+  theme(legend.position = "bottom", legend.direction = "horizontal") +
+  labs(title = "Mortalidade proporcional", 
+       subtitle = "DSEI Yanomami", 
+       color = NULL, x = "Ano", y = "Percentual")
+```
+
+## Pedido 25072016474202355
+
+```{r}
+ped25072016474202355 <- read_csv2(
+  file = "dados/25072016474202355.csv", 
+  col_types = cols(
+    ano = col_double(),
+    ocupacao = col_character(),
+    `De 0 a 4` = col_double(),
+    `De 5 a 9` = col_double(),
+    `De 10 a 19` = col_double(),
+    `De 20 a 29` = col_double(),
+    `De 30 a 59` = col_double(),
+    `Maior ou Igual a 60` = col_double(),
+    `Idade Não Informada` = col_double())
+)
+```
+
+```{r}
+#| fig-height: 10
+#| fig-width: 10
+ped25072016474202355 |>
+  mutate(total = `De 0 a 4` + `De 5 a 9` +
+           `De 10 a 19` + `De 20 a 29` +
+           `De 30 a 59` + `Maior ou Igual a 60` +
+           `Idade Não Informada`) |>
+  select(ano, ocupacao, total) |>
+  filter(ocupacao %in% c(
+    "Agente de combate a endemias",
+    "Agente indígena de saneamento",
+    "Agente indígena de saúde",
+    "Auxiliar em saúde bucal",
+    "Cirurgião dentista - clínico geral",
+    "Enfermeiro",
+    "Enfermeiro sanitarista",
+    "Nutricionista",
+    "Técnico de enfermagem"
+  )) |>
+  ggplot(aes(x = ano, y = total, color = ocupacao)) +
+  geom_line() +
+  facet_wrap(~ ocupacao, 
+             scales = "free_y", 
+             labeller = label_wrap_gen(multi_line = TRUE)) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(
+    title = "Atendimentos por profissionais de saúde",
+    subtitle = "DSEI Yanomami", 
+    x = "Ano", y = "Atendimentos (n)"
+  )
+```
